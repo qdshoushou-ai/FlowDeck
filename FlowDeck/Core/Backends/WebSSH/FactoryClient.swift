@@ -71,9 +71,9 @@ actor FactoryClient {
         try await login()
         let info = try await request("zwrt_web", "device_info", params: JSONObject(), token: token ?? "")
         guard let imei = info.string("imei"), let firmware = info.string("wa_inner_version"),
-            firmware == FactoryBootstrap.firmware,
-            let fingerprint = DeviceIdentity.fingerprint(model: "MU5250", imei: imei)
-        else { throw ManagementError.unsupported("首次部署当前仅适配 MU5250 B28，设备身份或固件不匹配。") }
+            DeviceCompatibility.supportsU60Firmware(firmware),
+            let fingerprint = DeviceIdentity.fingerprint(model: DeviceCompatibility.u60Model, imei: imei)
+        else { throw ManagementError.unsupported("首次部署当前仅适配 MU5250 B28/B31，设备身份或固件不匹配。") }
         return FactoryDeploymentIdentity(imei: imei, firmware: firmware, fingerprint: fingerprint)
     }
 
@@ -113,7 +113,7 @@ actor FactoryClient {
         let zero = String(repeating: "0", count: 32)
         let info = try await request("zwrt_web", "web_login_info", params: JSONObject(), token: zero)
         guard let salt = info.string("zte_web_sault") else {
-            throw ManagementError.unsupported("原厂认证协议与已知 B28 不一致。")
+            throw ManagementError.unsupported("原厂认证协议与已知 B28/B31 不一致。")
         }
         let digest = Self.passwordDigest(password, salt: salt)
         let result = try await request("zwrt_web", "web_login", params: JSONObject(["password": digest]), token: zero)

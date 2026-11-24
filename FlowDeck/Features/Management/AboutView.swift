@@ -87,7 +87,7 @@ struct AboutView: View {
                         }
                         GlassSection("已适配原厂接口") {
                             DeviceParameterRow(title: "设备型号", value: "MU5250 · 中兴 U60 Pro")
-                            DeviceParameterRow(title: "固件", value: "B28")
+                            DeviceParameterRow(title: "固件", value: "B28 / B31")
                             Text("其他机型或固件需逐项验证，未适配的写入保持不可用。")
                                 .font(.footnote.weight(.medium)).foregroundStyle(.secondary)
                         }

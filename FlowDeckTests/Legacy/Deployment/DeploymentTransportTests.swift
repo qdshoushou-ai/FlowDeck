@@ -54,6 +54,13 @@ final class DeploymentTransportTests: XCTestCase {
         XCTAssertFalse(fixture.multipartValid)
     }
 
+    /// B31 复用 B28 的原厂接口；只有固件串进入受支持的组合时才允许继续。
+    func testFirmwareB31IsAcceptedForDeploymentIdentity() async throws {
+        let (client, _, _) = try makeClient(.b31Firmware)
+        let identity = try await client.deploymentIdentity()
+        XCTAssertEqual(identity.firmware, "BD_CNMU5250V1.0.0B31")
+    }
+
     private func makeClient(_ scenario: DeploymentHTTPFixture.Scenario) throws -> (FactoryClient, DeploymentHTTPFixture, FactoryDeploymentIdentity) {
         let host = UUID().uuidString.lowercased() + ".test"
         let fixture = DeploymentHTTPFixture(scenario)
@@ -71,7 +78,7 @@ final class DeploymentTransportTests: XCTestCase {
 
 /// 每个测试使用独立主机映射；锁保护 URLSession 回调线程和测试线程之间的计数。
 private final class DeploymentHTTPFixture: @unchecked Sendable {
-    enum Scenario { case success, wrongDigest, changedIdentity, lostResponse, unsupportedFirmware }
+    enum Scenario { case success, wrongDigest, changedIdentity, lostResponse, unsupportedFirmware, b31Firmware }
     static let imei = "868000001234567"
     let package = Data("Salted__".utf8) + Data(repeating: 1, count: 24)
     private let scenario: Scenario
@@ -84,6 +91,15 @@ private final class DeploymentHTTPFixture: @unchecked Sendable {
     var multipartValid: Bool { lock.withLock { validUpload } }
 
     init(_ scenario: Scenario) { self.scenario = scenario }
+
+    /// 各场景返回的原厂固件串。B31 与 B28 共用同一套适配。
+    private func firmware() -> String {
+        switch scenario {
+        case .unsupportedFirmware: return "unknown-B29"
+        case .b31Firmware: return "BD_CNMU5250V1.0.0B31"
+        default: return FactoryBootstrap.firmware
+        }
+    }
 
     func response(to request: URLRequest) throws -> Data {
         try lock.withLock {
@@ -125,7 +141,7 @@ private final class DeploymentHTTPFixture: @unchecked Sendable {
                     0,
                     [
                         "imei": scenario == .changedIdentity && identities == 2 ? "868000001234568" : Self.imei,
-                        "wa_inner_version": scenario == .unsupportedFirmware ? "unknown-B29" : FactoryBootstrap.firmware,
+                        "wa_inner_version": firmware(),
                     ],
                 ]
             case "device_restore_proc":

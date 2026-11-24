@@ -1,8 +1,9 @@
 import Foundation
 
-/// MU5250 B28 的离线首次引导。只补充 rc.local，不改 USB、分区或原厂服务。
+/// MU5250 的离线首次引导（B28 实机验证，B31 复用同一载荷）。只补充 rc.local，不改 USB、分区或原厂服务。
 /// 服务先绑定回环地址并完成随机凭据初始化，确认后才开放局域网管理端口。
 enum FactoryBootstrap {
+    /// 离线载荷在 B28 上验证通过；放行哪些固件由 DeviceCompatibility.u60FirmwareSuffixes 决定。
     static let firmware = "BD_FLYMODEMMU5250V1.0.0B28"
     static let binaryDigest = "758f20a172ac6f79046d86215744084f5cd45cc3b0f35dd99c2bd97325572df9"
     static let marker = "# FLOWDECK_BOOTSTRAP_V1"

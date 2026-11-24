@@ -237,6 +237,31 @@ final class ManagementTests: XCTestCase {
             DeviceIdentity.fingerprint(model: "MU5250", imei: "868000001234568"))
     }
 
+    func testU60FirmwareAllowListAcceptsB28AndB31RejectsOthers() {
+        XCTAssertTrue(DeviceCompatibility.supportsU60Firmware("BD_FLYMODEMMU5250V1.0.0B28"))
+        XCTAssertTrue(DeviceCompatibility.supportsU60Firmware("BD_CNMU5250V1.0.0B31"))
+        XCTAssertTrue(DeviceCompatibility.supportsU60Firmware("BD_FLYMODEMMU5250V1.0.0B31"))
+        XCTAssertFalse(DeviceCompatibility.supportsU60Firmware("BD_FLYMODEMMU5250V1.0.0B29"))
+        XCTAssertFalse(DeviceCompatibility.supportsU60Firmware("BD_FLYMODEMMU5250V1.0.0B30"))
+        XCTAssertFalse(DeviceCompatibility.supportsU60Firmware("BD_FLYMODEMMU5250V1.0.0B3"))
+        XCTAssertFalse(DeviceCompatibility.supportsU60Firmware(""))
+        XCTAssertFalse(DeviceCompatibility.supportsU60Firmware(nil))
+    }
+
+    func testWebSSHWriteGateRequiresU60ModelAndSupportedFirmware() {
+        var snapshot = DeviceSnapshot()
+        snapshot.model = DeviceCompatibility.u60Model
+        snapshot.firmware = "BD_FLYMODEMMU5250V1.0.0B28"
+        XCTAssertTrue(DeviceCompatibility.supportsWebSSHWrite(snapshot))
+        snapshot.firmware = "BD_CNMU5250V1.0.0B31"
+        XCTAssertTrue(DeviceCompatibility.supportsWebSSHWrite(snapshot))
+        snapshot.firmware = "BD_FLYMODEMMU5250V1.0.0B29"
+        XCTAssertFalse(DeviceCompatibility.supportsWebSSHWrite(snapshot))
+        snapshot.model = DeviceCompatibility.f50Model
+        snapshot.firmware = "BD_CNMU5250V1.0.0B31"
+        XCTAssertFalse(DeviceCompatibility.supportsWebSSHWrite(snapshot))
+    }
+
     func testHistoryRetainsFiveAndDeduplicatesCurrent() throws {
         let id = UUID().uuidString
         for index in 0..<7 {

@@ -34,7 +34,7 @@ enum BackendRegistry {
             },
             verifyWrite: { _, snapshot, _ in
                 guard DeviceCompatibility.supportsWebSSHWrite(snapshot) else {
-                    throw ManagementError.unsupported("此写入流程仅适配 MU5250 B28，当前固件不匹配。")
+                    throw ManagementError.unsupported("此写入流程仅适配 MU5250 B28/B31，当前固件不匹配。")
                 }
             }),
         BackendDescriptor(

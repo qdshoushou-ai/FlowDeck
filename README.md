@@ -91,12 +91,13 @@ iOS 26 使用 Liquid Glass，较早系统使用材质回退。未绑定、离线
 
 | 接入方式 | 当前验证组合 | 管理通道 |
 | :--- | :--- | :--- |
-| **WebSSH + Mihomo** | 中兴 U60 Pro · MU5250 · B28 | WebSSH、原厂接口、Mihomo 控制 API |
+| **WebSSH + Mihomo** | 中兴 U60 Pro · MU5250 · B28 / B31 | WebSSH、原厂接口、Mihomo 控制 API |
 | **UFI-TOOLS + Mihomo** | 中兴 F50 · MU300 · B09 · UFI-TOOLS 4.1.5 | UFI 管理通道、原厂接口、Mihomo 控制 API |
 
 > [!IMPORTANT]
 > FlowDeck 接入已部署好服务的设备。首次 Root、刷机及设备端安装仍需通过电脑完成。
 > 安装了相同组件，不代表其他型号或固件已经兼容；具体写入能力还会校验设备身份、固件和服务布局。
+> B31 与 B28 共用已验证的 WebSSH 与原厂接口适配；每次写入仍由设备回读确认，布局不符按未确认失败处理。
 > [U60 Pro 和 F50 部署与验收指南](docs/DeviceSetup.md) 按机型列出固件要求、上游教程和连接检查。
 
 两种接入方式共享 Mihomo 管理体验，原厂管理与维护能力按各自适配情况提供。

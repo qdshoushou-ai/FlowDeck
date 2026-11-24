@@ -159,12 +159,13 @@ final class DeploymentStore {
 
     private func verify(_ api: any WebSSHAPI) async throws {
         let snapshot = try await api.snapshot()
-        guard snapshot.model == "MU5250", snapshot.firmware == FactoryBootstrap.firmware,
+        guard snapshot.model == DeviceCompatibility.u60Model,
+            DeviceCompatibility.supportsU60Firmware(snapshot.firmware),
             let actual = DeviceIdentity.fingerprint(model: snapshot.model, imei: snapshot.imei)
-        else { throw ManagementError.unsupported("本安装方案当前仅适配 MU5250 B28。") }
+        else { throw ManagementError.unsupported("本安装方案当前仅适配 MU5250 B28/B31。") }
         if let expected = profile.fingerprint, expected != actual { throw ManagementError.deviceChanged }
         profile.fingerprint = actual
-        profile.model = "MU5250"
+        profile.model = DeviceCompatibility.u60Model
     }
 
     private func persistCredentials(_ devices: DeviceStore) throws {
@@ -187,9 +188,9 @@ final class DeploymentStore {
                 if let expected = profile.fingerprint, expected != actual.fingerprint { throw ManagementError.deviceChanged }
                 identity = actual
                 profile.fingerprint = actual.fingerprint
-                profile.model = "MU5250"
+                profile.model = DeviceCompatibility.u60Model
                 if phase == "new" { phase = "factoryDetected" }
-                message = "已验证 MU5250 B28。首次开放请使用电脑辅助流程；当前不开放手机恢复写入。"
+                message = "已验证 MU5250 原厂身份。首次开放请使用电脑辅助流程；当前不开放手机恢复写入。"
             } else {
                 let api = try webAPI()
                 try await verify(api)

@@ -181,7 +181,7 @@ struct DeploymentView: View {
                     .font(.headline)
                 Text("此前成功部署使用电脑处理原厂备份，开启 root ADB，再经 USB 安装 WebSSH。普通 Wi-Fi 连接本身不提供 root 或 ADB 权限。")
                     .foregroundStyle(.secondary)
-                Label("目前适配：MU5250 / U60 Pro · B28", systemImage: "checkmark.shield")
+                Label("目前适配：MU5250 / U60 Pro · B28 / B31", systemImage: "checkmark.shield")
                     .font(.footnote.weight(.medium))
                 Text("其他中兴型号和固件需单独验证，安装了 WebSSH 也不代表透明代理脚本一定兼容。")
                     .font(.footnote.weight(.medium)).foregroundStyle(.secondary)
