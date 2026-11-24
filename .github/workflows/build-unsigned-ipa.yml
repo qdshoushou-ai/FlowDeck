@@ -28,7 +28,8 @@ env:
 
 jobs:
   unsigned-ipa:
-    runs-on: macos-15
+    # macOS 26 是当前 GA 的镜像；macOS 15 队列在 2026-11 已出现长时间排队。
+    runs-on: macos-26
     timeout-minutes: 45
     steps:
       - name: Checkout
