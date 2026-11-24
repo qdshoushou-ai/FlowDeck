@@ -28,8 +28,8 @@ env:
 
 jobs:
   unsigned-ipa:
-    # macOS 26 是当前 GA 的镜像；macOS 15 队列在 2026-11 已出现长时间排队。
-    runs-on: macos-26
+    # Arm64 macOS 池在 2026-11 长时间排队；Intel 池可正常调度（2026-11-24 已验证出包）。
+    runs-on: macos-15-intel
     timeout-minutes: 45
     steps:
       - name: Checkout
