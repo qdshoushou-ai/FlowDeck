@@ -1,0 +1,99 @@
+name: Build unsigned IPA
+
+# 只在需要时手动或按分支触发；不影响仓库原有的 Build and audit 工作流。
+on:
+  workflow_dispatch:
+    inputs:
+      marketing_version:
+        description: 版本号（CFBundleShortVersionString）
+        required: true
+        default: "0.4.1"
+      build_number:
+        description: 构建号（CFBundleVersion）
+        required: true
+        default: "53"
+  push:
+    branches: ["b31-support"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unsigned-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MARKETING_VERSION: ${{ inputs.marketing_version || '0.4.1' }}
+  BUILD_NUMBER: ${{ inputs.build_number || '53' }}
+
+jobs:
+  unsigned-ipa:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Select Xcode 26
+        run: |
+          set -euo pipefail
+          XCODE_APP=$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort | tail -1)
+          if [ -n "$XCODE_APP" ]; then
+            sudo xcode-select -s "$XCODE_APP/Contents/Developer"
+          fi
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project
+        run: |
+          set -euo pipefail
+          xcodegen generate
+          git --no-pager diff --stat -- FlowDeck.xcodeproj FlowDeck/Info.plist FlowDeckWidget/Info.plist
+
+      # 只编译测试目标，不运行；用于确认新增测试能通过编译。
+      - name: Compile test targets (best effort)
+        continue-on-error: true
+        run: |
+          xcodebuild -project FlowDeck.xcodeproj -scheme FlowDeck -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO build-for-testing
+
+      - name: Build unsigned app
+        run: |
+          set -euo pipefail
+          xcodebuild -project FlowDeck.xcodeproj -scheme FlowDeck -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath build \
+            MARKETING_VERSION="$MARKETING_VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+            build
+          APP=build/Build/Products/Release-iphoneos/FlowDeck.app
+          test -d "$APP"
+          test -d "$APP/PlugIns/FlowDeckWidget.appex"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist"
+          lipo -info "$APP/FlowDeck"
+          # 构建产物里必须含有补丁的放行文案，否则说明打的是旧代码。
+          grep -a -q 'B28/B31' "$APP/FlowDeck"
+          echo "verified: B31 allow-list marker present in binary"
+
+      - name: Package IPA
+        run: |
+          set -euo pipefail
+          APP=build/Build/Products/Release-iphoneos/FlowDeck.app
+          rm -rf Payload FlowDeck-unsigned.ipa
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          ditto -c -k --sequesterRsrc --keepParent Payload FlowDeck-unsigned.ipa
+          ls -lh FlowDeck-unsigned.ipa
+          unzip -l FlowDeck-unsigned.ipa | head -15
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: FlowDeck-unsigned-${{ env.MARKETING_VERSION }}-${{ env.BUILD_NUMBER }}
+          path: FlowDeck-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
